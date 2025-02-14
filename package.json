@@ -15,6 +15,7 @@
     "airtable": "^0.12.2",
     "discord-music-player": "^9.1.1",
     "discord.js": "^14.18.0",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "isomorphic-unfetch": "^4.0.2"
   }
 }
