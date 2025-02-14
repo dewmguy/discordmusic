@@ -1,0 +1,20 @@
+{
+  "name": "discordmusic",
+  "version": "1.0.0",
+  "description": "a discord bot that connects to discord voice channels to play music from youtube and other sources",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/opus": "^0.10.0",
+    "@discordjs/rest": "^2.4.3",
+    "airtable": "^0.12.2",
+    "discord-music-player": "^9.1.1",
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.4.7"
+  }
+}
