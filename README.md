@@ -50,9 +50,10 @@ The bot provides several music commands to interact with:
 | `/music stop`  | Stops music and leaves |
 
 ## 📜 Usage Guidelines
-- 
-- You need to be in the same voice channel as the bot to control playback.
-- The bot will disconnect automatically if left alone in a voice channel.
+- Discord app requires privilaged intents.
+- Discord app requires **Send Messages**, **Connect**, and **Speak** permissions.
+- User need to be in the same voice channel as the bot to control playback.
+- Bot will disconnect automatically if left alone in a voice channel.
 
 ## 🛠 Troubleshooting
 - **Bot doesn’t respond to commands?**
@@ -60,7 +61,8 @@ The bot provides several music commands to interact with:
   - Check if the bot is running and connected to Discord.
 - **Music doesn’t play?**
   - Make sure `ffmpeg` and `yt-dlp` are installed and accessible.
-  - Check if the requested track is available for streaming.
+  - Uncomment related error output in the script to help debug.
+  - Make sure yt-dlp is updated regularly.
 
 ## 🎤 Contributing
 Contributions are welcome! Feel free to submit an issue or open a pull request.
@@ -74,4 +76,3 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 ⭐ **If you like this project, consider giving it a star!** ⭐
-
