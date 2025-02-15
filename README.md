@@ -1,6 +1,6 @@
 # 🎵 Discord Music Bot
 
-Welcome to the **Discord Music Bot**! This bot allows you to play, queue, and manage music in your Discord server using **yt-dlp** and **ffmpeg**. It supports various streaming platforms and provides a seamless music experience for your community.
+This bot uses [Discord.JS](https://www.npmjs.com/package/discord.js?activeTab=readme) and [@discordjs/voice](https://www.npmjs.com/package/@discordjs/voice) to allow you to play, queue, and manage music in your Discord server using **yt-dlp** and **ffmpeg**. It supports various streaming platforms and provides a seamless music experience for your community.
 
 ## 🚀 Features
 - 🎶 **Stream Music**: Play music from YouTube and other supported platforms directly into your voice channel.
