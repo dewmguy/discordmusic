@@ -37,6 +37,14 @@ Ensure you have the following installed on your system:
    node index.js
    ```
 
+### Debugging
+
+Recommend using nodemon to help you debug.
+```
+npm install -g nodemon or npm install --save-dev nodemon
+nodemon index.js
+```
+
 ## 🔧 Commands
 The bot provides several music commands to interact with:
 | Command         | Description |
