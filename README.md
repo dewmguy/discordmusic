@@ -34,7 +34,7 @@ Ensure you have the following installed on your system:
    ```
 4. Run the bot:
    ```sh
-   node index.js
+   node index.js or npm run app
    ```
 
 ### Debugging
@@ -42,7 +42,7 @@ Ensure you have the following installed on your system:
 Recommend using nodemon to help you debug.
 ```
 npm install -g nodemon or npm install --save-dev nodemon
-nodemon index.js
+nodemon index.js or npm run dev
 ```
 
 ## 🔧 Commands

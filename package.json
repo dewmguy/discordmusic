@@ -4,7 +4,8 @@
   "description": "a discord bot that connects to voice to supply music to a voice channel.",
   "main": "index.js",
   "scripts": {
-    "test": "nodemon index.js"
+    "app": "node index.js",
+    "dev": "nodemon index.js"
   },
   "repository": {
     "type": "git",
