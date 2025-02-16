@@ -1,10 +1,12 @@
 "use strict";
 const { Client, GatewayIntentBits, SlashCommandBuilder, EmbedBuilder, REST, Routes } = require("discord.js");
 const { joinVoiceChannel, getVoiceConnection, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require("@discordjs/voice");
+require("dotenv").config();
 const { spawn } = require("child_process");
+const { OpenAI } = require('openai');
+const openai = new OpenAI({ apiKey: process.env.OPENAIKEY });
 const fs = require("fs");
 const path = require("path");
-require("dotenv").config();
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
@@ -14,6 +16,9 @@ const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
 console.log("[system] bot is starting...");
 
+let tracksList = [];
+let trackCount = 1;
+
 class MusicManager {
     constructor() {
         this.player = createAudioPlayer();
@@ -22,6 +27,7 @@ class MusicManager {
         console.warn("[system] playlist created.");
         this.currentPlayerIndex = 0;
         this.isPlaying = false;
+        this.metadataProcess = null;
 
         this.player.on(AudioPlayerStatus.Idle, () => {
             this.isPlaying = false;
@@ -148,9 +154,27 @@ class MusicManager {
         return this.isPlaying;
     }
 
-    addMusic(music) {
-        this.playList.push(music);
-        console.log(`[system] track added to queue: ${music.title}`);
+    addMusic(interaction, data) {
+        if (!data) throw new Error("no music found.");
+        
+        tracksList.push(`[${data.title}](${data.webpage_url})`);
+        let footer = trackCount === 1 ? `${data.webpage_url}` : `${trackCount} tracks added to the playlist`;
+        trackCount++;
+        
+        let description = tracksList.join("\n");
+
+        const embed = new EmbedBuilder()
+            .setColor(embedColor[data.extractor] || 0xFF0000)
+            .setAuthor({ name: data.extractor, url: data.uploader_url || undefined })
+            .setTitle(`Queued Track from ${data.uploader}`)
+            .setDescription(description)
+            .setThumbnail(data.thumbnail)
+            .setFooter({ text: footer });
+
+        interaction.editReply({ content: "✅ Music added to queue!", embeds: [embed] });
+
+        this.playList.push(data);
+        console.log(`[system] track added to queue: ${data.title}`);
         if (!this.isPlaying) this.playMusic();
     }
 
@@ -166,44 +190,72 @@ class MusicManager {
     stopMusic() {
         this.isPlaying = false;
         this.player.stop();
+        if (this.metadataProcess) {
+          console.log("[system] terminating playlist scrape.");
+          this.metadataProcess.kill("SIGTERM");
+          this.metadataProcess = null;
+        }
         console.log("[system] music stopped.");
     }
 }
 
 const musicManagers = new Map();
 
-function getInfo(music) {
+function isURL(str) {
+    try {
+        new URL(str);
+        return true;
+    }
+    catch (e) { return false; }
+}
+
+async function queueMusic(interaction, query) {
+    console.log(`[user] query: ${query}`)
+    
+    if (!isURL(query)) {
+        const directive = "you are a music expert. you are provided a query from a search function. this query will come in one of a couple intended forms: artist, album, song, or any combination thereof; or song lyrics. if the user submitted a combination of song, album, or artist, your job is simply to correct typos and make corrections based on glaring inaccuracies or misconceptions, and repeat it back. lastly, if the user submitted song lyrics, your job is to make the most educated guess at the lyrics and output the song and artist name. your output will be fed directly into another app for processing, no further output is required. If you receive any other query that that seems to fit outside these parameters, do not process it, simply repeat it back.";
+        const completion = await openai.chat.completions.create({
+          messages: [
+            { "role": "system", "content": directive },
+            { "role": "user", "content": query }
+          ],
+          model: "gpt-4o",
+        });
+        query = completion.choices[0]?.message?.content || "[openai] error: api problem";
+        console.log(`[chatgpt] response: ${query}`)
+    }
+
     return new Promise((resolve, reject) => {
-        const ytdlp = spawn("yt-dlp", [
+        const musicManager = musicManagers.get(interaction.guild.id);
+        musicManager.metadataProcess = spawn("yt-dlp", [
             "--skip-download",
-            "--no-playlist",
+            "--yes-playlist",
             "--output-na-placeholder", "null",
             "--print",
-            '{"id":%(id)j, "title":%(title)j, "description":%(description)j, "uploader":%(uploader)j, "webpage_url":%(webpage_url)j, "uploader_url":%(uploader_url)j, "thumbnail":%(thumbnail)j, "extractor":%(extractor)j}',
+            '{"id":%(id)j, "title":%(title)j, "uploader":%(uploader)j, "webpage_url":%(webpage_url)j, "uploader_url":%(uploader_url)j, "thumbnail":%(thumbnail)j, "extractor":%(extractor)j}',
             "--default-search", "ytsearch",
-            music,
+            query,
         ]);
+        
+        let count = 0;
 
-        let dataReceived = false;
-
-        ytdlp.stdout.once("data", (data) => {
+        musicManager.metadataProcess.stdout.on("data", (data) => {
+            ++count;
             try {
                 const info = JSON.parse(data);
-                dataReceived = true;
-                resolve(info);
-            } catch (error) {
-                reject(new Error("[yt-dlp] error: failure to parse."));
+                musicManagers.get(interaction.guild.id).addMusic(interaction, info);
+            }
+            catch (error) {
+                console.error("[yt-dlp] error parsing JSON", error.message);
             }
         });
 
-        ytdlp.once("close", () => {
-            if (!dataReceived) {
-                reject(new Error("[yt-dlp] error: no results or timed out."));
-            }
-            else { console.log("[yt-dlp] connected to pipe."); }
+        musicManager.metadataProcess.once("close", (code) => {
+            if (code !== 0) { reject(new Error("[yt-dlp] error with results or timed out.")); }
+            else { console.log("[yt-dlp] completed processing."); resolve(count); }
         });
 
-        ytdlp.on("error", (error) => {
+        musicManager.metadataProcess.on("error", (error) => {
             reject(new Error(`[yt-dlp] general error: ${error.message}`));
         });
     });
@@ -273,7 +325,7 @@ const commandHandlers = {
         let connection = getVoiceConnection(interaction.guild.id);
 
         if (!voiceChannel) return interaction.editReply("❌ Join a voice channel first!");
-        else if (subcommand === "join") { // connect                  
+        else if (subcommand === "join") {
             if (connection) {
                 return interaction.editReply("❌ I am already in a voice channel!");
             }
@@ -293,25 +345,15 @@ const commandHandlers = {
                 leaveVoice(interaction, connection);
                 break;
 
-            case "queue": // add track
+            case "queue": // NEW TEST
                 try {
                     const musicQuery = interaction.options.get("music").value;
-                    const info = await getInfo(musicQuery);
-                    if (!info) throw new Error("[queue] error: no music found.");
-                    if (!musicManager) return interaction.editReply("❌ Logic Error. Rejoin the voice channel and try again.");
-
-                    musicManager.addMusic(info);
-                    const embed = new EmbedBuilder()
-                        .setColor(embedColor[info.extractor] || 0xFF0000)
-                        .setAuthor({ name: info.extractor, url: info.uploader_url || undefined })
-                        .setTitle(`Queued Track from ${info.uploader}`)
-                        .setDescription(`[${info.title}](${info.webpage_url})`)
-                        .setThumbnail(info.thumbnail)
-                        .setFooter({ text: `${info.webpage_url}` });
-
-                    await interaction.editReply({ content: "✅ Music added to queue!", embeds: [embed] });
+                    const count = await queueMusic(interaction, musicQuery);
+                    if (count > 1) { await interaction.editReply({ content: `✅ Finished adding ${count} tracks to the queue!` }); }
+                    tracksList = [];
+                    trackCount = 1;
                 } catch (error) {
-                    console.error("[queue] general error:", error);
+                    console.error("[system] error:", error.message);
                     await interaction.editReply(error.message.includes("❌ No results found")
                         ? "❌ I couldn't find music matching your request."
                         : `❌ An error occurred: ${error.message}`);
@@ -348,6 +390,11 @@ const commandHandlers = {
                 if (!musicManager || !musicManager.getIsPlaying()) return interaction.editReply("❌ No music is currently playing.");
                 if (!currentMusic) return interaction.editReply("❌ There is no music playing to stop!");
                 leaveVoice(interaction, connection);
+                
+                if (musicManager.metadataProcess) {
+                    musicManager.metadataProcess.kill("SIGTERM");
+                    musicManager.metadataProcess = null;
+                }
 
                 const stopEmbed = new EmbedBuilder()
                     .setColor(0xd1d1d1)
