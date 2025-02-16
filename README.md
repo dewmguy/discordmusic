@@ -50,24 +50,21 @@ nodemon index.js or npm run dev
 
 ## 🔧 Commands
 The bot provides several music commands to interact with:
-| Command         | Description |
+| Command        | Description |
 |----------------|-------------|
-| `/music join`  | Joins voice channel |
-| `/music leave` | Leaves voice channel |
-| `/music queue <query>` | URL to song or playlist; Song, Album, or Artist; or Search by lyrics or context; If a search query is given, the bot will use ChatGPT to help find what you're looking for. Search will not return results for playlists. |
-| `/music play`  | Resumes playback |
-| `/music pause` | Pauses playback |
-| `/music skip`  | Skips current song and plays the next one in queue |
-| `/music stop`  | Stops music and clears the queue |
-| `/music current` | Displays the currently playing track with additional metadata |
-| `/music volume <value>` | Adjusts the playback volume |
+| `/music join`  | Bot joins voice channel. Required for all other commands. |
+| `/music queue <query>` | Submit a URL to song or playlist; Song, Album, or Artist; or Search by lyrics or context; If a search query is given, the bot will use ChatGPT to help find what you're looking for, correct typos and common misconceptions to funnel you in the right direction. Give as much context as you can to isolate your search. Search will not return results for playlists. |
+| `/music play`  | Resumes playback. |
+| `/music pause` | Pauses playback. |
+| `/music skip`  | Skips current song and plays the next one in queue. |
+| `/music stop or leave`  | Stops music, clears the queue, and disconnects the bot. |
 
 ## 📝 Usage Guidelines
 - Discord app requires privileged intents.
 - Discord app requires **Send Messages**, **Connect**, and **Speak** permissions.
 - User needs to be in the same voice channel as the bot to control playback.
 - Bot will disconnect automatically if left alone in a voice channel.
-- The bot processes song titles and lyrics using OpenAI for better search accuracy.
+- The bot processes song titles and lyrics using ChatGPT to improve search accuracy.
 
 ## 🛠 Troubleshooting
 - **Bot doesn’t respond to commands?**
