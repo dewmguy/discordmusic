@@ -16,6 +16,8 @@ const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
 console.log("[system] bot is starting...");
 
+const allowedRoles = process.env.DJROLES.split(",").map(id => id.trim());
+
 let tracksList = [];
 let trackCount = 1;
 
@@ -323,6 +325,10 @@ const commandHandlers = {
         const member = guild.members.cache.get(interaction.user.id);
         const voiceChannel = member.voice.channel;
         let connection = getVoiceConnection(interaction.guild.id);
+
+        if (!member.roles.cache.some(role => allowedRoles.includes(role.id))) {
+            return interaction.editReply("⛔ You do not have permission to use the bot.");
+        }
 
         if (!voiceChannel) return interaction.editReply("❌ Join a voice channel first!");
         else if (subcommand === "join") {
