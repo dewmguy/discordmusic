@@ -1,5 +1,5 @@
 "use strict";
-const { Client, GatewayIntentBits, SlashCommandBuilder, EmbedBuilder, REST, Routes } = require("discord.js");
+const { Client, GatewayIntentBits, SlashCommandBuilder, EmbedBuilder, REST, Routes, PermissionsBitField } = require("discord.js");
 const { joinVoiceChannel, getVoiceConnection, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require("@discordjs/voice");
 require("dotenv").config();
 const { spawn } = require("child_process");
@@ -66,6 +66,7 @@ class MusicManager {
 
             this.currentProcess = spawn("yt-dlp", [
                 "--no-playlist",
+                "--cookies", "cookies.txt",
                 "-o", "-",
                 "-f", "bestaudio",
                 "--buffer-size", "16M",
@@ -231,6 +232,7 @@ async function queueMusic(interaction, query) {
         const musicManager = musicManagers.get(interaction.guild.id);
         musicManager.metadataProcess = spawn("yt-dlp", [
             "--skip-download",
+            "--cookies", "cookies.txt",
             "--yes-playlist",
             "--output-na-placeholder", "null",
             "--print",
@@ -322,15 +324,17 @@ const commandHandlers = {
         const subcommand = interaction.options.getSubcommand();
         console.log(`[user] command: ${subcommand}`);
         const guild = interaction.guild;
-        const member = guild.members.cache.get(interaction.user.id);
+        //const member = guild.members.cache.get(interaction.user.id);
+        const member = await guild.members.fetch(interaction.user.id);
         const voiceChannel = member.voice.channel;
         let connection = getVoiceConnection(interaction.guild.id);
 
-        if (!member.roles.cache.some(role => allowedRoles.includes(role.id))) {
+        if (!member.roles.cache.some(role => allowedRoles.includes(role.id)) && !member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+            console.log(`[system] permission blocked (admin: ${member.permissions.has(PermissionsBitField.Flags.Administrator)})`);
             return interaction.editReply("⛔ You do not have permission to use the bot.");
         }
 
-        if (!voiceChannel) return interaction.editReply("❌ Join a voice channel first!");
+        if (!voiceChannel) { return interaction.editReply("❌ Join a voice channel first!"); }
         else if (subcommand === "join") {
             if (connection) {
                 return interaction.editReply("❌ I am already in a voice channel!");
@@ -338,7 +342,7 @@ const commandHandlers = {
             joinVoice(voiceChannel);
             return interaction.editReply("✅ Joined your voice channel!");
         }
-        else if (!connection) return interaction.editReply("❌ The bot is not in a voice channel!");
+        else if (!connection) { return interaction.editReply("❌ The bot is not in a voice channel!"); }
         else if (voiceChannel.id !== connection.joinConfig.channelId) {
             return interaction.editReply("❌ You cannot control the bot from outside the voice channel.");
         }
