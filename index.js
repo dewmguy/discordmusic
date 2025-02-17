@@ -216,7 +216,7 @@ async function queueMusic(interaction, query) {
     console.log(`[user] query: ${query}`)
     
     if (!isURL(query)) {
-        const directive = "you are a music expert. you are provided a query from a search function. this query will come in one of a couple intended forms: artist, album, song, or any combination thereof; or song lyrics. if the user submitted a combination of song, album, or artist, your job is simply to correct typos and make corrections based on glaring inaccuracies or misconceptions, and repeat it back. lastly, if the user submitted song lyrics, your job is to make the most educated guess at the lyrics and output the song and artist name. your output will be fed directly into another app for processing, no further output is required. If you receive any other query that that seems to fit outside these parameters, do not process it, simply repeat it back.";
+        const directive = "you are a music expert. you are provided a query from a search function, the input from this search function could be unpredictable, like the names of an artist, album, song, or any combination thereof; or song lyrics; or nonsense. Your job is to interpret, correct typos, make corrections based on obvious inaccuracies or common misconceptions, and provide consistent output in the form of a song title and artist name (e.g. 'Homework by Daft Punk'). Your output will be fed directly into another app for processing, no further output is required.";
         const completion = await openai.chat.completions.create({
           messages: [
             { "role": "system", "content": directive },
@@ -324,7 +324,6 @@ const commandHandlers = {
         const subcommand = interaction.options.getSubcommand();
         console.log(`[user] command: ${subcommand}`);
         const guild = interaction.guild;
-        //const member = guild.members.cache.get(interaction.user.id);
         const member = await guild.members.fetch(interaction.user.id);
         const voiceChannel = member.voice.channel;
         let connection = getVoiceConnection(interaction.guild.id);
