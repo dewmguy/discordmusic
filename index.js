@@ -319,10 +319,10 @@ const commands = [
 
 const commandHandlers = {
     music: async (interaction) => {
-        if (!interaction.guild) return interaction.reply("❌ This command can only be used in a server.");
-        await interaction.deferReply();
+        if (!interaction.guild) return interaction.reply({content: "❌ This command can only be used in a server.", ephemeral: true });
         const subcommand = interaction.options.getSubcommand();
         console.log(`[user] command: ${subcommand}`);
+        await interaction.deferReply({ ephemeral: subcommand === "queue" ? false : true });
         const guild = interaction.guild;
         const member = await guild.members.fetch(interaction.user.id);
         const voiceChannel = member.voice.channel;
@@ -354,7 +354,7 @@ const commandHandlers = {
                 leaveVoice(interaction, connection);
                 break;
 
-            case "queue": // NEW TEST
+            case "queue": // add song to playlist
                 try {
                     const musicQuery = interaction.options.get("music").value;
                     const count = await queueMusic(interaction, musicQuery);
